@@ -8,10 +8,7 @@
 
 import Foundation
 
-class Checkmark {
-    var status = false
-    
-    func toggle(val:Bool) ->Bool {
-        return !val
-    }
+class Items {
+    var title = ""
+    var isChecked = false
 }
