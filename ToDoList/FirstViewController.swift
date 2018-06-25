@@ -14,9 +14,16 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
     
     //Creating an array of items
     var items = ["Messi","Ronaldo","Dhoni"]
+    
+    //creating a variable to store the textField captured inside UIAlertaddtextField closure.
     var itemAdded:UITextField!
+    
+    //Dubugging variables
     var count = 0
     var count1 = 0
+    
+    //Creating UserDefaults for persistent local data storage
+    let userDefault = UserDefaults.standard
     
     //creating an empty array which keeps track of the checkmark status for each row
     var checkMarkItems = [Checkmark]()
@@ -42,6 +49,10 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
                 return
             }
             self.items.append(newItem)
+            
+            //"items" array is stored using UserDefaults in plist
+            self.userDefault.setValue(self.items, forKey: "NewItemAdded")
+            
            //Calling the tableView DataSource methods to update the tableView
              self.myTableView.reloadData()
         }
@@ -125,7 +136,14 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        print("ViewDidLoad")
         // Do any additional setup after loading the view, typically from a nib.
+        
+        //Retrieving the "items" array that was previously stored in plist using UserDefaults
+        if let item = userDefault.array(forKey: "NewItemAdded") as? [String] {
+            items = item
+        }
         
         //setting up the tableView DataSource and Delegate
         myTableView.dataSource = self
