@@ -20,12 +20,12 @@ import UIKit
 class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     //Note:Text Fields can only be added to an alert controller of style .alert
-      //   Attempt to set a non-property-list object
+      // Attempt to set a non-property-list object
+     //  Cannot use instance member 'dataFilePath' within property initializer; property initializers run before 'self' is available
     
     //creating an empty array of Items of type "Data Model"
     var itemsArray = [Items]()
     
-   
     //creating a variable to store the textField captured inside UIAlertaddtextField closure.
     var itemAdded:UITextField!
     
@@ -36,9 +36,20 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
     //Creating UserDefaults for persistent local data storage
     let userDefault = UserDefaults.standard
     
+    //creating a global variable to store the FilePath
+    
+    var globalFilePath:URL!
+    
     @IBOutlet weak var myTableView: UITableView!
     
     @IBAction func addItem(_ sender: UIBarButtonItem) {
+        
+        //Creating a FilePath to our directory using FileManager and also creating our own plist and placing that plist inside the FilePath
+        PlistURL()
+        
+        print(globalFilePath,"zzz")
+        
+
         
       //creating an UIALertController
         let alertController = UIAlertController.init(title: "AlertController-Activated", message:"Add an Item to ToDoList", preferredStyle: .alert)
@@ -66,8 +77,9 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
             item.isChecked = false
             
             self.itemsArray.append(item)
-            
-            //self.userDefault.set(self.itemsArray, forKey: "Item-Added")
+          
+            //Saving our NewItem to plist
+            self.SaveData()
             
            //Calling the tableView DataSource methods to update the tableView
              self.myTableView.reloadData()
@@ -90,6 +102,23 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
         
     }
     
+    
+    //**********    Saving Our Data to custom plist  ***************
+    
+    
+    func SaveData() {
+    //creating an encoder to encode our newItem to plist
+    let encoder = PropertyListEncoder()
+    //encoding our newItem
+    do {
+    let data = try encoder.encode(itemsArray)
+    //writing the encoded data to our custom plist
+    try data.write(to: globalFilePath)
+    } catch let error {
+        print(error)
+    }
+  }
+    
     //MARK - Tableview DataSource Methods
     
     //TODO - no.of rows in each column
@@ -110,14 +139,30 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
         
         //getting the rowNumber of the created cell
         let rowNumber = indexPath.row
-        //assigning text for cell at this rowNumber
-        cell.textLabel!.text = itemsArray[rowNumber].title
+        
+        //setting title for each cell based on rowNumber
+        ConfigureTitleForCell(cell:cell, rowNumber:rowNumber)
+        
+        //configuring the checkMark based on "isChecked" property value
+        configureCheckMark(cell: cell, indexPath: indexPath)
         
         return cell
     }
     
-  
+    //function to configure label
+    func ConfigureTitleForCell(cell:UITableViewCell, rowNumber:Int) {
+        //assigning text for cell at this rowNumber
+        cell.textLabel!.text = itemsArray[rowNumber].title
+    }
     
+    //function to configure checkMark
+    func configureCheckMark(cell:UITableViewCell, indexPath:IndexPath) {
+        
+        //Ternary operator
+        // value = (Condition) ? (value-if-True) : (value-if-False)
+        cell.accessoryType = (itemsArray[indexPath.row].isChecked) ? (.checkmark) : (.none)
+        
+    }
     
 //MARK - TableView Delegate Methods
     
@@ -137,44 +182,49 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
         
      //configuring the checkMark based on "isChecked" property value
         configureCheckMark(cell: cell, indexPath: indexPath)
+        
+      //updating the checkMark status to our custom plist
+         SaveData()
 
         
         //highlighting the selected row just for few seconds
         myTableView.deselectRow(at: indexPath, animated: true)
     }
     
-    //function to configure checkMark
-    func configureCheckMark(cell:UITableViewCell, indexPath:IndexPath) {
-        
-        //Ternary operator
-        // value = (Condition) ? (value-if-True) : (value-if-False)
-        cell.accessoryType = (itemsArray[indexPath.row].isChecked) ? (.checkmark) : (.none)
-        
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        
+        //Creating a FilePath to our directory using FileManager and also creating our own plist and placing that plist inside the FilePath
+         PlistURL()
+        
+        //Decodable protocol is used to load the data that we have stored in plist after our app has been terminated and re-launched
+          LoadData()
+        
+        
         print("ViewDidLoad")
+        print("Items.plist")
         
-        //creating an instance of the dataModel
-        let item = Items()
-        
-        item.title = "Messi"
-        item.isChecked = false
-        itemsArray.append(item)
-        
-        item.title = "Ronaldo"
-        item.isChecked = false
-        itemsArray.append(item)
-        
-        item.title = "Dhoni"
-        item.isChecked = false
-        itemsArray.append(item)
-        
-        item.title = "Sachin"
-        item.isChecked = false
-        itemsArray.append(item)
+//        //creating an instance of the dataModel
+//        let item = Items()
+//        item.title = "Messi"
+//        item.isChecked = false
+//        itemsArray.append(item)
+//
+//        let item = Items()
+//        item.title = "Ronaldo"
+//        item.isChecked = false
+//        itemsArray.append(item)
+//
+//        let item = Items()
+//        item.title = "Dhoni"
+//        item.isChecked = false
+//        itemsArray.append(item)
+//
+//        let item = Items()
+//        item.title = "Sachin"
+//        item.isChecked = false
+//        itemsArray.append(item)
         
 //        item.title = "Messi"
 //        item.isChecked = false
@@ -222,8 +272,31 @@ class FirstViewController: UIViewController, UITableViewDelegate, UITableViewDat
         //setting up the tableView DataSource and Delegate
         myTableView.dataSource = self
         myTableView.delegate = self
-        
     }
+    
+    func PlistURL() {
+        let filePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        let finalFilePath = filePath.first?.appendingPathComponent("Items.plist")
+        globalFilePath = finalFilePath
+    }
+    
+    func LoadData() {
+        //Retrieving the Data present in plist in-order to decode it
+        guard let data = try? Data.init(contentsOf: globalFilePath) else {
+                return
+        }
+        print("Inside Load data")
+            //creating an instance of decoder
+            let decoder = PropertyListDecoder()
+            //decoding the data present in plist
+            do {
+            let decodedValue = try? decoder.decode([Items].self, from: data)
+                print(decodedValue)
+            itemsArray = decodedValue!
+            } catch let error {
+                print(error)
+            }
+       }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

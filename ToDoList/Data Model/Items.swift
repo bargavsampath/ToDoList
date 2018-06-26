@@ -8,7 +8,10 @@
 
 import Foundation
 
-class Items {
+//Making this class adopt Encodable protocol so that all of its properties can be encoded inorder to save it in plist
+//Making this class also adopt Decodable protocol so that saved data in plist can be retrieved back and updated in the UI when the app is terminated and re-launched again.
+class Items:Encodable, Decodable {
+   
     var title = ""
     var isChecked = false
 }
